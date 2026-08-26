@@ -187,7 +187,7 @@ open class AppleLocationEngine(
      *
      * @param locationFlow The [MutableStateFlow] to emit location updates to.
      */
-    class LocationDelegate(
+    private class LocationDelegate(
         private val locationFlow: MutableStateFlow<Location?>
     ) : NSObject(), CLLocationManagerDelegateProtocol {
 
