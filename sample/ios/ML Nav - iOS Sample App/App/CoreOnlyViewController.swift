@@ -8,8 +8,8 @@ class CoreOnlyViewController: UIViewController, MLNMapViewDelegate, ProgressChan
     
     private var maneuverText: UILabel!
     
-    /// Held instance of MapLibre navigation. **Important** to put this in a property variable to have a keep-alive instance that still work.
-    /// If we use this only localy the iOS lifecycle will throw away this instance and the navigation get stopped.
+    /// Held instance of MapLibre navigation. **Important** to keep this in a property to have a keep-alive instance that still works.
+    /// If we use this only locally the iOS lifecycle will throw away this instance and the navigation gets stopped.
     private var maplibreNavigation: IOSMapLibreNavigation?
     
     override func viewDidLoad() {

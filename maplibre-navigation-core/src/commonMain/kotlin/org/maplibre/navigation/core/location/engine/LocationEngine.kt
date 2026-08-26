@@ -41,7 +41,8 @@ interface LocationEngine {
         /**
          * Minimum interval between location updates. This is the fastest interval that will
          * be used to get location updates.
-         * **Note:** This value is ignored for iOS because there is no configuration availble for it.
+         * **Note:** This value is ignored for iOS because there is no configuration available
+         * for it.
          */
         val intervalMilliseconds: Long,
     ) {
