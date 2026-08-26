@@ -6,9 +6,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.maplibre.navigation.core.location.Location
 import org.maplibre.navigation.core.location.LocationValidator
 import org.maplibre.navigation.core.location.engine.LocationEngine
+import org.maplibre.navigation.core.location.engine.LocationEngine.Request.Accuracy
 import org.maplibre.navigation.core.milestone.Milestone
 import org.maplibre.navigation.core.models.DirectionsRoute
 import org.maplibre.navigation.core.navigation.MapLibreNavigation
@@ -46,7 +48,7 @@ open class MapLibreNavigationEngine(
     /**
      * Start navigation for the given route.
      *
-     * This call will starting listening to location updates and process this data to update to the current navigation state.
+     * This call will start listening to location updates and process this data to update to the current navigation state.
      * This will run until the [stopNavigation] is called.
      */
     override fun startNavigation(route: DirectionsRoute) {
@@ -57,12 +59,15 @@ open class MapLibreNavigationEngine(
                 locationEngine.getLastLocation() ?: routeUtils.createFirstLocationFromRoute(route)
             )
 
-            locationEngine.listenToLocation(
-                LocationEngine.Request(
-                    minIntervalMilliseconds = LOCATION_ENGINE_INTERVAL,
-                    maxIntervalMilliseconds = LOCATION_ENGINE_INTERVAL,
-                )
-            ).collect(::processLocationAndIndexUpdate)
+            withContext(Dispatchers.Main) {
+                locationEngine.listenToLocation(
+                    LocationEngine.Request(
+                        accuracy = Accuracy.HIGH,
+                        minUpdateDistanceMeters = LOCATION_UPDATE_MINIMUM_METERS,
+                        intervalMilliseconds = LOCATION_UPDATE_INTERVAL_MILLISECONDS,
+                    )
+                ).collect(::processLocationAndIndexUpdate)
+            }
         }
     }
 
@@ -93,7 +98,10 @@ open class MapLibreNavigationEngine(
      *
      * @param rawLocation hold location, navigation (with options), and distances away from maneuver
      */
-     suspend fun processLocationAndIndexUpdate(rawLocation: Location, index: NavigationIndices? = null) {
+    suspend fun processLocationAndIndexUpdate(
+        rawLocation: Location,
+        index: NavigationIndices? = null
+    ) = withContext(Dispatchers.Default) {
         processingMutex.withLock {
             // Index is set inside the mutex to avoid race conditions.
             index?.let {
@@ -101,7 +109,7 @@ open class MapLibreNavigationEngine(
             }
 
             if (!locationValidator.isValidUpdate(rawLocation)) {
-                return
+                return@withContext
             }
 
             val routeProgress = navigationRouteProcessor
@@ -214,6 +222,7 @@ open class MapLibreNavigationEngine(
     }
 
     companion object {
-        const val LOCATION_ENGINE_INTERVAL = 1000L
+        const val LOCATION_UPDATE_INTERVAL_MILLISECONDS = 1000L
+        const val LOCATION_UPDATE_MINIMUM_METERS = 0f
     }
 }
