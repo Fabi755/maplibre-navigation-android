@@ -47,7 +47,9 @@ class CoreOnlyViewController: UIViewController, MLNMapViewDelegate, ProgressChan
             let routes = directionsRoute!.routes
             let route = self.withRouteOptions(route: routes.first!)
 
-            let navigationOptions = MapLibreNavigationOptions()
+            let navigationOptions = MapLibreNavigationOptions.Builder()
+                .withSnapToRoute(snapToRoute: true)
+                .build()
             let replayLocationEngine = ReplayRouteLocationEngine()
             self.maplibreNavigation = IOSMapLibreNavigation.Builder()
                 .withLocationEngine(locationEngine: replayLocationEngine)

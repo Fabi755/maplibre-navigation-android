@@ -22,6 +22,7 @@ import org.maplibre.navigation.core.navigation.NavigationIndices
 import org.maplibre.navigation.core.navigation.NavigationRouteProcessor
 import org.maplibre.navigation.core.routeprogress.RouteProgress
 import org.maplibre.navigation.core.utils.RouteUtils
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Default implementation for [NavigationEngine] which is responsible for fetching location updates
@@ -31,9 +32,14 @@ open class MapLibreNavigationEngine(
     private val mapLibreNavigation: MapLibreNavigation,
     private val routeUtils: RouteUtils,
     private val locationValidator: LocationValidator = LocationValidator(mapLibreNavigation.options.locationAcceptableAccuracyInMetersThreshold),
-    private val backgroundScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
-    private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
+    private val mainScopeContext: CoroutineContext = Dispatchers.Main,
+    private val backgroundScopeContext: CoroutineContext = Dispatchers.Default,
 ) : NavigationEngine {
+
+    private val mainScope: CoroutineScope = CoroutineScope(mainScopeContext)
+
+    private val backgroundScope: CoroutineScope = CoroutineScope(backgroundScopeContext)
+
     private val locationEngine: LocationEngine
         get() = mapLibreNavigation.locationEngine
 
@@ -59,7 +65,7 @@ open class MapLibreNavigationEngine(
                 locationEngine.getLastLocation() ?: routeUtils.createFirstLocationFromRoute(route)
             )
 
-            withContext(Dispatchers.Main) {
+            withContext(mainScopeContext) {
                 locationEngine.listenToLocation(
                     LocationEngine.Request(
                         accuracy = Accuracy.HIGH,
@@ -101,7 +107,7 @@ open class MapLibreNavigationEngine(
     suspend fun processLocationAndIndexUpdate(
         rawLocation: Location,
         index: NavigationIndices? = null
-    ) = withContext(Dispatchers.Default) {
+    ) = withContext(backgroundScopeContext) {
         processingMutex.withLock {
             // Index is set inside the mutex to avoid race conditions.
             index?.let {
