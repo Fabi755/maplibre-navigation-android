@@ -68,6 +68,7 @@ open class GoogleLocationEngine(
 
     private fun toGMSLocationRequest(request: LocationEngine.Request): LocationRequest {
         return with(LocationRequest.Builder(request.intervalMilliseconds)) {
+            setMinUpdateIntervalMillis(request.intervalMilliseconds)
             setMinUpdateDistanceMeters(request.minUpdateDistanceMeters)
             setPriority(toGMSLocationPriority(request.accuracy))
             build()
